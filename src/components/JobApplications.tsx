@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,25 +24,55 @@ interface JobApplicationFormProps {
   initialData?: JobApplication;
 }
 
-export const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ 
-  onSubmit, 
-  initialData 
+export const JobApplicationForm: React.FC<JobApplicationFormProps> = ({
+  onSubmit,
+  initialData
 }) => {
   const [formData, setFormData] = useState<JobApplication>({
     companyName: initialData?.companyName || '',
     jobTitle: initialData?.jobTitle || '',
     jobDescription: initialData?.jobDescription || '',
     jobUrl: initialData?.jobUrl || '',
-    status: initialData?.status || ApplicationStatus.APPLIED
+    status: initialData?.status || ApplicationStatus.APPLIED,
+    resumeUrl: initialData?.resumeUrl || ''
   });
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+
+  const handleResumeUpload = async () => {
+    if (!resumeFile) return null;
+
+    const formData = new FormData();
+    formData.append('file', resumeFile);
+
+    try {
+      const response = await axios.post('/files/upload-resume', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      console.log("file upload response", response)
+      return response.data; 
+    } catch (error) {
+      console.error('Resume upload failed', error);
+      return null;
+    }
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = initialData?.id 
-        ? await axios.put(`applications/${initialData.id}`, formData)
-        : await axios.post('applications', formData);
-      
+      // Upload resume first if a new file is selected
+      const uploadedResumeUrl = resumeFile ? await handleResumeUpload() : formData.resumeUrl;
+
+      const submissionData = {
+        ...formData,
+        resumeUrl: uploadedResumeUrl
+      };
+
+      console.log(submissionData)
+      const response = initialData?.id
+        ? await axios.put(`/applications/${initialData.id}`, submissionData)
+        : await axios.post('/applications', submissionData);
+
       onSubmit(response.data);
     } catch (error) {
       console.error('Error saving application', error);
@@ -63,31 +93,49 @@ export const JobApplicationForm: React.FC<JobApplicationFormProps> = ({
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input 
-            placeholder="Company Name" 
+          <Input
+            placeholder="Company Name"
             value={formData.companyName}
-            onChange={(e) => setFormData({...formData, companyName: e.target.value})}
-            required 
+            onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+            required
           />
-          <Input 
-            placeholder="Job Title" 
+          <Input
+            placeholder="Job Title"
             value={formData.jobTitle}
-            onChange={(e) => setFormData({...formData, jobTitle: e.target.value})}
-            required 
+            onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+            required
           />
-          <Textarea 
-            placeholder="Job Description" 
+          <Textarea
+            placeholder="Job Description"
             value={formData.jobDescription}
-            onChange={(e) => setFormData({...formData, jobDescription: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value })}
           />
-          <Input 
-            placeholder="Job URL" 
+          <Input
+            placeholder="Job URL"
             value={formData.jobUrl}
-            onChange={(e) => setFormData({...formData, jobUrl: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, jobUrl: e.target.value })}
           />
-          <Select 
+          <Input
+            type="file"
+            accept=".pdf,.doc,.docx"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) setResumeFile(file);
+            }}
+          />
+          {formData.resumeUrl && (
+            <a
+              href={`https://applymate.s3.ap-south-1.amazonaws.com/${formData.resumeUrl}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500"
+            >
+              View Current Resume
+            </a>
+          )}
+          <Select
             value={formData.status}
-            onValueChange={(value) => setFormData({...formData, status: value as ApplicationStatus})}
+            onValueChange={(value) => setFormData({ ...formData, status: value as ApplicationStatus })}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select Status" />
@@ -134,13 +182,13 @@ export const JobApplicationList: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <JobApplicationForm 
+      <JobApplicationForm
         onSubmit={(newApp) => {
-          const updatedApps = newApp.id 
+          const updatedApps = newApp.id
             ? applications.map(app => app.id === newApp.id ? newApp : app)
             : [...applications, newApp];
           setApplications(updatedApps);
-        }} 
+        }}
       />
       {applications.map(app => (
         <div key={app.id} className="border p-4 flex justify-between items-center">
@@ -149,16 +197,16 @@ export const JobApplicationList: React.FC = () => {
             <p>{app.status}</p>
           </div>
           <div className="space-x-2">
-            <JobApplicationForm 
+            <JobApplicationForm
               initialData={app}
               onSubmit={(updatedApp) => {
-                setApplications(applications.map(a => 
+                setApplications(applications.map(a =>
                   a.id === updatedApp.id ? updatedApp : a
                 ));
               }}
             />
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={() => app.id && handleDelete(app.id)}
             >
               Delete
