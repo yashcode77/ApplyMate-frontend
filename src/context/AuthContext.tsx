@@ -1,5 +1,6 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: any;
@@ -12,14 +13,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check for token in localStorage on page load
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Restore user session
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setUser({ token });
+    }
+  }, []);
 
   const login = async (username: string, password: string) => {
     try {
       const response = await axios.post('auth/login', { username, password });
-      console.log(response)
-      const { token, user } = response.data;
+      const { token } = response.data;
       localStorage.setItem('token', token);
-      setUser(user);
+      setUser(response.data);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } catch (error) {
       console.error('Login failed', error);
@@ -30,16 +41,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
-    // navigate("/login")
     delete axios.defaults.headers.common['Authorization'];
+    navigate('/login');
   };
 
   const signup = async (username: string, email: string, password: string) => {
     try {
       const res = await axios.post('auth/signup', { username, email, password });
-      console.log(email)
-      console.log(res)
-    //   await login(username, password);
+      console.log(email);
+      console.log(res);
     } catch (error) {
       console.error('Signup failed', error);
       throw error;

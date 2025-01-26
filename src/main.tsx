@@ -5,7 +5,5 @@ import "@/styles/globals.css";
 import './config/axios';
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
     <App />
-  </StrictMode>
 );

@@ -1,9 +1,14 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './context/AuthContext';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import Dashboard from './pages/Dashboard';
+import { JobApplications } from './pages/JobApplications';
+// import { Profile } from './pages/Profile';
+// import { NotFound } from './pages/NotFound';
 
 const ProtectedRoute: React.FC = () => {
   const token = localStorage.getItem('token');
@@ -17,29 +22,26 @@ const PublicRoute: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <Router>
+    <BrowserRouter>
+      <AuthProvider>
         <Routes>
-          {/* Public Routes */}
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
           </Route>
 
-          {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
-            {/* Add other protected routes here */}
+            <Route path="/applications" element={<JobApplications />} />
+            {/* <Route path="/profile" element={<Profile />} /> */}
           </Route>
 
-          {/* Redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          
-          {/* 404 Route */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          {/* <Route path="*" element={<NotFound />} /> */}
         </Routes>
-      </Router>
-    </AuthProvider>
+        <ToastContainer />
+      </AuthProvider>
+    </BrowserRouter>
   );
 };
 

@@ -3,21 +3,22 @@ import axios from 'axios';
 import { JobApplicationList } from '../components/JobApplications';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { useAuth } from '../context/AuthContext';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer
 } from 'recharts';
 import { ApplicationStatus, JobApplication } from '@/types/index';
 
 const Dashboard: React.FC = () => {
   const { logout, user } = useAuth();
   const [applications, setApplications] = useState<JobApplication[]>([]);
-  const [statusStats, setStatusStats] = useState<{status: string, count: number}[]>([]);
+  const [statusStats, setStatusStats] = useState<{ status: string, count: number }[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,7 +29,7 @@ const Dashboard: React.FC = () => {
         ]);
         setApplications(applicationsResponse.data);
         console.log(applicationsResponse)
-        
+
         // Process status statistics
         const statusCounts = Object.values(ApplicationStatus).map(status => ({
           status: status.replace('_', ' '),
@@ -56,24 +57,35 @@ const Dashboard: React.FC = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Application Status Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+      <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Application Status Distribution</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="w-full" type="always">
+          <div className="min-w-[600px]">
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={statusStats}>
-                <XAxis dataKey="status" />
-                <YAxis />
+              <BarChart data={statusStats} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <XAxis type="number" />
+                <YAxis
+                  dataKey="status"
+                  type="category"
+                  interval={0}
+                  tickFormatter={(value) => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()}
+                  width={150}
+                />
                 <Tooltip />
-                <Bar dataKey="count" fill="#8884d8" />
+                <Bar dataKey="count" fill="hsl(var(--primary))" />
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </CardContent>
+    </Card>
 
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Quick Stats</CardTitle>
           </CardHeader>
@@ -87,15 +99,14 @@ const Dashboard: React.FC = () => {
                 <p className="text-sm text-muted-foreground">Active Applications</p>
                 <p className="text-2xl font-bold">
                   {applications.filter(
-                    app => 
-                      app.status !== ApplicationStatus.REJECTED && 
-                      app.status !== ApplicationStatus.WITHDRAWN
+                    app =>
+                      app.status !== ApplicationStatus.REJECTED
                   ).length}
                 </p>
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
       <Card className="mt-6">
