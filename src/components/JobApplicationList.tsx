@@ -54,10 +54,10 @@ export const JobApplicationList: React.FC = () => {
       } else {
         await axios.post("applications", newApp)
       }
-      
+
       // Fetch updated applications list
       await fetchApplications()
-      
+
       toast.success(newApp.id ? "Application updated successfully" : "Application added successfully")
     } catch (error) {
       toast.error("Failed to save application")
@@ -161,7 +161,11 @@ export const JobApplicationList: React.FC = () => {
               <TableCell>{app.companyName}</TableCell>
               <TableCell>{app.jobTitle}</TableCell>
               <TableCell>{app.status.replace("_", " ")}</TableCell>
-              <TableCell>{new Date(app.applicationDate).toLocaleDateString()}</TableCell>
+              <TableCell>
+                {typeof app.applicationDate === "string"
+                  ? new Date(app.applicationDate).toLocaleDateString()
+                  : "N/A"}
+              </TableCell>
               <TableCell>
                 <div className="flex space-x-2">
                   <Button variant="outline" size="sm" onClick={() => setViewDetailsApp(app)}>
